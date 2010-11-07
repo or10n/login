@@ -17,14 +17,14 @@
   mysql_select_db($dbname);
  
   
-  $error = loaderror($host);
-	if($error > 5) {
+  $errors = loaderror($host);
+	if($errors > 5) {
     //echo 'Hackinig attempt!';
 		$error='hack';
 	} else {
-	if($error > 0)
-	  sleep(5);
-	if($error > 2)
+	if($errors > 0)
+	  sleep(1);
+	if($errors > 2)
 	  sleep(5);
 
   $prot_login = protect($login); 
@@ -40,28 +40,28 @@
 
 	$data = mysql_fetch_array($res);
   
-	if($pass !== $data['pass']){
+  if($data['status'] == 1){
+	  $error = 'ban';
+	}
+
+	if($pass !== $data['pass'] AND $error != 'ban'){
     //echo 'Error in login or pass';
 		saveerror($host);
 		$error = 'pass';
-	} else {
-
-  if($data['status'] == 1){
-	  $error = 'ban';
 	}
 
 	if($data['status'] == 2){
     $error = 'arch';
 	}
 
-  if($data['status'] == 0 || $data['status'] == 3){
+  if(($data['status'] == 0 || $data['status'] == 3) && $error == ''){
     //echo 'Congratulations!';
 		$error='allgood';
     exec("/srv/www/login/scripts/login.sh $host $login");
     mysql_query("DELETE FROM hna_security WHERE host='$host'");
   }
 
-  }
+  
   } 
   }
 
@@ -71,6 +71,7 @@
 <head> 
   <title>Страница управления аккаунтом</title> 
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
+		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
     <link rel='stylesheet' id='login-css'  href='css/login.css' type='text/css' media='all' /> 
     <link rel='stylesheet' id='colors-fresh-css'  href='css/colors-fresh.css' type='text/css' media='all' /> 
 </head> 
@@ -84,7 +85,7 @@ if($error=='arch')
 	echo '<div id="error"><br>Ваша учетная запись помещена в архив, пожалуйста обратитесь к администратору</div>';
 
 if($error=='pass')
-	echo '<div id="error"><br>Неверный логин или пароль.<br>После 6 неправльных попыток IP-адрес будет заблокрован на сутки</div>';
+	echo '<div id="error"><br>Неверный логин или пароль.<br>После '. (6 - $errors) .' неправильных попыток IP-адрес будет заблокрован на сутки</div>';
 
 if($error=='empty')
 	echo '<div id="error"><br>Необходимо ввести логин и пароль</div>';
